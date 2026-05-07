@@ -1,7 +1,11 @@
+from typing import List, Optional
+
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models import Recipe
 from app.schemas import RecipeCreate
+
 
 async def create_recipe(db: AsyncSession, recipe: RecipeCreate) -> Recipe:
     db_recipe = Recipe(**recipe.model_dump())
@@ -10,17 +14,23 @@ async def create_recipe(db: AsyncSession, recipe: RecipeCreate) -> Recipe:
     await db.refresh(db_recipe)
     return db_recipe
 
-async def get_recipes_list(db: AsyncSession):
-    stmt = select(Recipe).order_by(Recipe.views.desc(), Recipe.cooking_time.asc())
-    result = await db.execute(stmt)
-    return result.scalars().all()
 
-async def get_recipe_by_id(db: AsyncSession, recipe_id: int):
+async def get_recipes_list(db: AsyncSession) -> List[Recipe]:
+    stmt = select(Recipe).order_by(Recipe.views.desc(),
+                                   Recipe.cooking_time.asc())
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_recipe_by_id(db: AsyncSession,
+                           recipe_id: int) -> Optional[Recipe]:
     stmt = select(Recipe).where(Recipe.id == recipe_id)
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
-async def increment_views(db: AsyncSession, recipe_id: int):
+
+async def increment_views(db: AsyncSession,
+                          recipe_id: int) -> Optional[Recipe]:
     stmt = (
         update(Recipe)
         .where(Recipe.id == recipe_id)
